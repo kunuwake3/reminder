@@ -3,6 +3,8 @@
 
 #include <QDialog>
 #include <QKeyEvent>
+#include <QSqlDatabase>
+#include <QSqlQuery>
 
 namespace Ui {
 class EditRec;
@@ -13,10 +15,10 @@ class EditRec : public QDialog {
 
 public:
     explicit EditRec(QWidget *parent = 0);
-
     ~EditRec();
 
 private slots:
+    // все твои слоты
     void on_eClose_clicked();
     void on_pushButton_clicked();
     void on_pushButton_2_clicked();
@@ -63,13 +65,22 @@ private slots:
 
 private:
     Ui::EditRec *ui;
+    int edited = 0;
+    int res_edit = 0;
+    int res_edit_c1 = 0;
+    int odd_ip_input = 0;
+    int black_theme = 0;
+    QString sets3 = "T";
+    QSqlDatabase db1;
+    QSqlQuery query;
+    quint64 key_x = 123456789;
 
 protected:
-    void closeEvent( QCloseEvent *res_e );
+    void closeEvent(QCloseEvent *res_e);
     void reject();
-
     virtual void keyReleaseEvent(QKeyEvent* event);
-
 };
 
 #endif // EDITREC_H
+
+
