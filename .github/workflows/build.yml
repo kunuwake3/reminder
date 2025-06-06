@@ -1,0 +1,65 @@
+name: Build Portable Qt SQLCipher App
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: 5.15.2
+
+      - name: Install SQLCipher
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sqlcipher libqt5sql5-sqlcipher
+
+      - name: Build
+        run: |
+          qmake
+          make
+
+      - name: Upload Linux portable build
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-portable-build
+          path: |
+            m3
+            f3_base.db
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Qt 5.15.2
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: 5.15.2
+          arch: win64_msvc2019_64
+
+      - name: Install SQLCipher (choco)
+        run: choco install sqlcipher
+
+      - name: Build
+        run: |
+          qmake
+          nmake
+
+      - name: Upload Windows portable build
+        uses: actions/upload-artifact@v3
+        with:
+          name: win-portable-build
+          path: |
+            release\\m3.exe
+            f3_base.db
