@@ -25,7 +25,7 @@ jobs:
 
       - name: Build
         run: |
-          qmake
+          qmake m3.pro
           make
 
       - name: List files (linux)
@@ -53,7 +53,7 @@ jobs:
 
       - name: Build
         run: |
-          qmake
+          qmake m3.pro
           mingw32-make
 
       - name: List files (windows)
