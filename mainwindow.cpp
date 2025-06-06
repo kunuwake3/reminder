@@ -5,6 +5,8 @@
 #include <QFileDialog>
 #include <QDir>
 #include <QVariantList>
+#include <QClipboard>
+#include <QDate>
 
 MainWindow::MainWindow(const QString &masterPassword, QWidget *parent)
     : QMainWindow(parent)
@@ -14,7 +16,6 @@ MainWindow::MainWindow(const QString &masterPassword, QWidget *parent)
 {
     ui->setupUi(this);
 
-    // Portable: база в той же папке, что и exe (или .AppImage)
     dbPath = QDir::current().filePath("f3_base.db");
 
     if (!core->openDatabase(dbPath, masterPassword)) {
@@ -29,8 +30,10 @@ MainWindow::MainWindow(const QString &masterPassword, QWidget *parent)
     connect(ui->actionAddServer, &QAction::triggered, this, &MainWindow::on_actionAddServer_triggered);
     connect(ui->actionDeleteServer, &QAction::triggered, this, &MainWindow::on_actionDeleteServer_triggered);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::on_actionAbout_triggered);
+    connect(ui->tableWidget, &QTableWidget::cellClicked, this, &MainWindow::on_tableWidget_cellClicked);
 
-    // Тут можно подключить и другие действия (копирование, оплата, напоминания и т.д.)
+    // Убедимся, что статусбар есть
+    if (!statusBar()) setStatusBar(new QStatusBar(this));
 }
 
 MainWindow::~MainWindow()
@@ -40,7 +43,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::refreshServers()
 {
-    // Таблица: обновляем данные
     QVariantList servers = core->getAllServers();
     ui->tableWidget->setRowCount(servers.size());
     for (int i = 0; i < servers.size(); ++i) {
@@ -49,6 +51,34 @@ void MainWindow::refreshServers()
             QTableWidgetItem *item = new QTableWidgetItem(row[j].toString());
             ui->tableWidget->setItem(i, j, item);
         }
+        // Цветовая индикация по next_payment (столбец 3)
+        colorizeRow(i, row[3].toString());
+    }
+}
+
+void MainWindow::colorizeRow(int row, const QString &nextPayment)
+{
+    if (nextPayment.isEmpty())
+        return;
+    QDate today = QDate::currentDate();
+    QDate payDate = QDate::fromString(nextPayment, "yyyy-MM-dd");
+    if (!payDate.isValid())
+        return;
+
+    QColor color;
+    int daysLeft = today.daysTo(payDate);
+
+    if (daysLeft < 0) // просрочено
+        color = QColor(255, 80, 80); // красный
+    else if (daysLeft <= 3)
+        color = QColor(255, 255, 150); // желтый
+    else
+        return;
+
+    for (int col = 0; col < ui->tableWidget->columnCount(); ++col) {
+        QTableWidgetItem *item = ui->tableWidget->item(row, col);
+        if (item)
+            item->setBackground(color);
     }
 }
 
@@ -59,7 +89,6 @@ void MainWindow::on_actionExit_triggered()
 
 void MainWindow::on_actionAddServer_triggered()
 {
-    // Пример простого диалога для добавления (можно расширять!)
     QString ip = QInputDialog::getText(this, "Add Server", "IP:");
     QString country = QInputDialog::getText(this, "Add Server", "Country:");
     QString next_payment = QInputDialog::getText(this, "Add Server", "Next payment (YYYY-MM-DD):");
@@ -79,7 +108,6 @@ void MainWindow::on_actionAddServer_triggered()
 
 void MainWindow::on_actionDeleteServer_triggered()
 {
-    // Удаляем выделенную строку
     int row = ui->tableWidget->currentRow();
     if (row < 0) return;
     int id = ui->tableWidget->item(row, 0)->text().toInt();
@@ -94,3 +122,17 @@ void MainWindow::on_actionAbout_triggered()
 {
     QMessageBox::about(this, "About", "Portable Server Inventory (Qt + SQLCipher)\nAll data encrypted, portable and cross-platform.");
 }
+
+void MainWindow::on_tableWidget_cellClicked(int row, int column)
+{
+    QTableWidgetItem *item = ui->tableWidget->item(row, column);
+    if (!item) return;
+    QString value = item->text();
+
+    // Копируем в буфер обмена
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setText(value);
+
+    statusBar()->showMessage(QString("Copied: %1").arg(value), 2000);
+}
+
