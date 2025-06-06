@@ -22,7 +22,7 @@ private slots:
     void on_actionDeleteServer_triggered();
     void on_actionAbout_triggered();
 
-    // Можно добавить свои слоты (копирование, оплачено, напоминания и т.д.)
+    void on_tableWidget_cellClicked(int row, int column); // копирование по клику
 
 private:
     Ui::MainWindow *ui;
@@ -31,6 +31,7 @@ private:
     QString masterPassword;
 
     void refreshServers();
+    void colorizeRow(int row, const QString &nextPayment);
 };
 
 #endif // MAINWINDOW_H
